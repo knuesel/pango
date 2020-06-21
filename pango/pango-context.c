@@ -1284,6 +1284,29 @@ get_base_font (ItemizeState *state)
   return state->base_font;
 }
 
+static void print_font_match (gunichar   wc,
+                              PangoFont *font)
+{
+  /* String for printing wc: maximum 6 bytes for g_unichar_to_utf8 + 1 leading
+   * space and the NULL terminator. */
+  gchar str[8];
+
+  /* Prefix a space if wc is zero-width */
+  gchar *utf8 = str;
+  if (g_unichar_iszerowidth(wc)) {
+    str[0] = ' ';
+    utf8++;
+  }
+
+  /* Append UTF-8 string for wc and terminate with NULL */
+  gint n = g_unichar_to_utf8(wc, utf8);
+  utf8[n] = NULL;
+
+  const PangoFontDescription* desc = pango_font_describe (font);
+  const char* family = pango_font_description_get_family (desc);
+  g_debug ("Font for U+%06"G_GINT32_FORMAT"X (%s):\t%s", wc, str, family);
+}
+
 static gboolean
 get_font (ItemizeState  *state,
           gunichar       wc,
@@ -1293,8 +1316,10 @@ get_font (ItemizeState  *state,
 
   /* We'd need a separate cache when fallback is disabled, but since lookup
    * with fallback disabled is faster anyways, we just skip caching */
-  if (state->enable_fallback && font_cache_get (state->cache, wc, font))
+  if (state->enable_fallback && font_cache_get (state->cache, wc, font)) {
+    print_font_match (wc, *font);
     return TRUE;
+  }
 
   info.lang = state->derived_lang;
   info.wc = wc;
@@ -1311,6 +1336,7 @@ get_font (ItemizeState  *state,
   if (state->enable_fallback)
     font_cache_insert (state->cache, wc, *font);
 
+  print_font_match (wc, *font);
   return TRUE;
 }
 
