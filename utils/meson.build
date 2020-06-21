@@ -80,3 +80,7 @@ if cairo_dep.found()
                           ])
 
 endif
+
+if fontconfig_dep.found()
+  show_fc_matches = executable('show-fc-matches', ['show-fc-matches.c'], dependencies: [fontconfig_dep])
+endif
